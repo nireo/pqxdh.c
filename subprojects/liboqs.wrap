@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/open-quantum-safe/liboqs.git
+revision = 0.14.0
+depth = 1
+
+[provide]
+liboqs = liboqs_dep
