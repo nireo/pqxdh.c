@@ -1,15 +1,14 @@
-#include <sodium.h>
+#ifndef __PQXDH_H__
+#define __PQXDH_H__
+
 #include <sodium/crypto_box.h>
 #include <sodium/crypto_scalarmult_curve25519.h>
 #include <sodium/crypto_sign.h>
-#include <stdio.h>
+#include <stdint.h>
 
 typedef uint8_t byte;
 
-// pqxdh_state represents the state of a user in the Post-Quantum Extended Triple Diffie
-// Hellman key exhange. the user state is not thread safe so the caller is responsible for
-// handling concurrency correctly.
-struct pqxdh_state {
+typedef struct pqxdh_state {
     byte ident_priv[crypto_scalarmult_curve25519_BYTES];
     byte ident_pub[crypto_scalarmult_curve25519_BYTES];
 
@@ -26,33 +25,23 @@ struct pqxdh_state {
     byte signing_private_key[crypto_sign_SECRETKEYBYTES];
 
     char username[64];
-};
+} pqxdh_state;
 
-struct pqxdh_initial_message {
+typedef struct pqxdh_initial_message {
     byte ident_pub[crypto_scalarmult_curve25519_BYTES];
     byte ephemral_pub[crypto_scalarmult_curve25519_BYTES];
     byte one_time_prekey[crypto_scalarmult_curve25519_BYTES];
 
     int used_prekey;
-};
+} pqxdh_initial_message;
 
-struct pqxdh_prekey_bundle {
+typedef struct pqxdh_prekey_bundle {
     byte ident_pub[crypto_scalarmult_curve25519_BYTES];
     byte ephemral_pub[crypto_scalarmult_curve25519_BYTES];
     byte one_time_prekey[crypto_scalarmult_curve25519_BYTES];
     byte signature[crypto_sign_BYTES];
-};
+} pqxdh_prekey_bundle;
 
-int pqxdh_init_state(struct pqxdh_state* state)
-{
-    // generate the user's identity key
-    crypto_box_keypair(state->ident_pub, state->ident_priv);
+int init_pqxdh_state(pqxdh_state* state);
 
-    return 0;
-}
-
-int main(void)
-{
-    printf("hello world");
-    return 0;
-}
+#endif

@@ -1,0 +1,1 @@
+option('build_cli', type: 'boolean', value: false, description: 'Build sample CLI')
