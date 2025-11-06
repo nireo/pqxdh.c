@@ -155,3 +155,55 @@ int init_key_exchange(const pqxdh_state* self,
     OQS_KEM_free(kem);
     return 0;
 }
+
+int complete_key_exchange(const pqxdh_state* self,
+    const pqxdh_initial_message* msg,
+    byte out_shared_secret[32])
+{
+    OQS_KEM* kem = OQS_KEM_new(OQS_KEM_alg_ml_kem_1024);
+    if (!kem)
+        return -1;
+
+    unsigned char ss[OQS_KEM_ml_kem_1024_length_shared_secret];
+    if (OQS_KEM_decaps(kem, ss, msg->ciphertext, self->mlkem_sk) != OQS_SUCCESS) {
+        OQS_KEM_free(kem);
+        return -1;
+    }
+
+    unsigned char peer_ident_pk_x25519[32];
+    unsigned char self_ident_sk_x25519[32];
+
+    if (crypto_sign_ed25519_pk_to_curve25519(peer_ident_pk_x25519, msg->peer_ident_pk) != 0) {
+        OQS_KEM_free(kem);
+        return -1;
+    }
+    if (crypto_sign_ed25519_sk_to_curve25519(self_ident_sk_x25519, self->ident_sk) != 0) {
+        OQS_KEM_free(kem);
+        return -1;
+    }
+
+    unsigned char dh1[crypto_scalarmult_BYTES];
+    unsigned char dh2[crypto_scalarmult_BYTES];
+    unsigned char dh3[crypto_scalarmult_BYTES];
+
+    // DH1 = DH(IKA, SPKB)
+    if (crypto_scalarmult(dh1, self->prekey_sk, peer_ident_pk_x25519) != 0) {
+        OQS_KEM_free(kem);
+        return -1;
+    }
+    // DH2 = DH(EKA, IKB)
+    if (crypto_scalarmult(dh2, self_ident_sk_x25519, msg->eph_pk) != 0) {
+        OQS_KEM_free(kem);
+        return -1;
+    }
+    // DH3 = DH(EKA, SPKB)
+    if (crypto_scalarmult(dh3, self->prekey_sk, msg->eph_pk) != 0) {
+        OQS_KEM_free(kem);
+        return -1;
+    }
+
+    kdf_blake2b_32(dh1, dh2, dh3, ss, out_shared_secret);
+
+    OQS_KEM_free(kem);
+    return 0;
+}
