@@ -182,9 +182,9 @@ int complete_key_exchange(const pqxdh_state* self,
         return -1;
     }
 
-    unsigned char dh1[crypto_scalarmult_BYTES];
-    unsigned char dh2[crypto_scalarmult_BYTES];
-    unsigned char dh3[crypto_scalarmult_BYTES];
+    byte dh1[crypto_scalarmult_BYTES];
+    byte dh2[crypto_scalarmult_BYTES];
+    byte dh3[crypto_scalarmult_BYTES];
 
     // DH1 = DH(IKA, SPKB)
     if (crypto_scalarmult(dh1, self->prekey_sk, peer_ident_pk_x25519) != 0) {
