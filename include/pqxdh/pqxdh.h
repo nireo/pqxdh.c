@@ -36,9 +36,8 @@ typedef struct pqxdh_initial_message {
     byte peer_ident_pk[crypto_scalarmult_curve25519_BYTES];
     byte eph_pk[crypto_scalarmult_curve25519_BYTES];
     byte one_time_prekey[crypto_scalarmult_curve25519_BYTES];
-
-    size_t ct_len;
-    byte* ct;
+    byte ciphertext[OQS_KEM_ml_kem_1024_length_ciphertext];
+    int used_one_time_prekey;
 } pqxdh_initial_message;
 
 typedef struct {
@@ -47,5 +46,7 @@ typedef struct {
 } pqxdh_init_output;
 
 int init_pqxdh_state(pqxdh_state* state);
+int init_key_exchange(const pqxdh_state* self, const pqxdh_key_bundle* other, pqxdh_init_output* out);
+int complete_key_exchange(const pqxdh_state* self, const pqxdh_initial_message* msg, byte out_shared_secret[32]);
 
 #endif
