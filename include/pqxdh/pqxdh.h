@@ -20,6 +20,65 @@ typedef struct {
     int used;
 } one_time_prekey;
 
+typedef struct {
+    byte mlkem_pk[OQS_KEM_ml_kem_1024_length_public_key];
+    byte mlkem_sk[OQS_KEM_ml_kem_1024_length_secret_key];
+} mlkem_key;
+
+#define QUEUE(name, type, CAP)                                                     \
+    typedef struct name {                                                          \
+        type buf[(CAP)];                                                           \
+        size_t front;                                                              \
+        size_t count;                                                              \
+    } name;                                                                        \
+                                                                                   \
+    static inline void name##_init(name* q)                                        \
+    {                                                                              \
+        q->front = 0u;                                                             \
+        q->count = 0u;                                                             \
+    }                                                                              \
+    static inline bool name##_is_empty(const name* q) { return q->count == 0u; }   \
+    static inline bool name##_is_full(const name* q) { return q->count == (CAP); } \
+    static inline size_t name##_size(const name* q) { return q->count; }           \
+    static inline void name##_clear(name* q)                                       \
+    {                                                                              \
+        q->front = 0u;                                                             \
+        q->count = 0u;                                                             \
+    }                                                                              \
+                                                                                   \
+    static inline bool name##_enqueue(name* q, type value)                         \
+    {                                                                              \
+        if (q->count == (CAP))                                                     \
+            return false;                                                          \
+        size_t rear = (q->front + q->count) % (CAP);                               \
+        q->buf[rear] = value;                                                      \
+        q->count++;                                                                \
+        return true;                                                               \
+    }                                                                              \
+                                                                                   \
+    static inline bool name##_dequeue(name* q, type* out)                          \
+    {                                                                              \
+        if (q->count == 0u)                                                        \
+            return false;                                                          \
+        if (out)                                                                   \
+            *out = q->buf[q->front];                                               \
+        q->front = (q->front + 1u) % (CAP);                                        \
+        q->count--;                                                                \
+        return true;                                                               \
+    }                                                                              \
+                                                                                   \
+    static inline bool name##_front(const name* q, type* out)                      \
+    {                                                                              \
+        if (q->count == 0u)                                                        \
+            return false;                                                          \
+        if (out)                                                                   \
+            *out = q->buf[q->front];                                               \
+        return true;                                                               \
+    }
+
+QUEUE(otpk_queue, one_time_prekey, 64)
+QUEUE(mlkem_queue, mlkem_key, 64)
+
 typedef struct pqxdh_state {
     byte ident_sk[crypto_sign_SECRETKEYBYTES];
     byte ident_pk[crypto_sign_PUBLICKEYBYTES];
@@ -33,6 +92,9 @@ typedef struct pqxdh_state {
     byte mlkem_pk_sig[crypto_sign_BYTES];
 
     one_time_prekey otps[MAX_OTPKS];
+
+    otpk_queue otpks;
+    mlkem_queue mlkem_keys;
 } pqxdh_state;
 
 typedef struct {
