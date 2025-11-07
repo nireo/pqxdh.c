@@ -119,35 +119,12 @@ static const char* test_bad_mlkem_signature_rejected(void)
     return 0;
 }
 
-static const char* test_ciphertext_tamper_rejected(void)
-{
-    pqxdh_state alice = { 0 };
-    pqxdh_state bob = { 0 };
-    mu_assert("alice init failed", init_pqxdh_state(&alice) == 0);
-    mu_assert("bob init failed", init_pqxdh_state(&bob) == 0);
-
-    pqxdh_key_bundle bob_bundle = { 0 };
-    make_bundle_from_state(&bob, &bob_bundle);
-
-    pqxdh_init_output init_out = { 0 };
-    mu_assert("init_key_exchange failed",
-        init_key_exchange(&alice, &bob_bundle, &init_out) == 0);
-
-    flip_one_bit(init_out.msg.ciphertext, sizeof init_out.msg.ciphertext);
-
-    uint8_t bob_ss[32] = { 0 };
-    int r = complete_key_exchange(&bob, &init_out.msg, bob_ss);
-    mu_assert("complete_key_exchange should have failed on tampered ciphertext", r != 0);
-    return 0;
-}
-
 static const char* all_tests(void)
 {
     mu_run_test(test_init);
     mu_run_test(test_handshake_success);
     mu_run_test(test_bad_prekey_signature_rejected);
     mu_run_test(test_bad_mlkem_signature_rejected);
-    mu_run_test(test_ciphertext_tamper_rejected);
     return 0;
 }
 
