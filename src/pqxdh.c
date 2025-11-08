@@ -73,6 +73,18 @@ int init_otpks(pqxdh_state* state)
     return 0;
 }
 
+int init_mlkem_keys(pqxdh_state* state, OQS_KEM* kem)
+{
+
+    for (size_t i = 0; i < MAX_OTPKS; ++i) {
+        int ret = OQS_KEM_keypair(kem, state->mlkem_keys[i].mlkem_pk, state->mlkem_keys[i].mlkem_sk) == OQS_SUCCESS;
+        if (ret)
+            return -1;
+    }
+
+    return 0;
+}
+
 int replace_otpk(pqxdh_state* state, int i)
 {
 
@@ -111,8 +123,11 @@ int init_pqxdh_state(pqxdh_state* state)
             ret = 0;
         assert(slen == crypto_sign_BYTES);
     }
-    OQS_KEM_free(kem);
+
     init_otpks(state);
+    init_mlkem_keys(state, kem);
+
+    OQS_KEM_free(kem);
 
     return 0;
 }
@@ -206,7 +221,6 @@ int init_key_exchange(const pqxdh_state* self,
         kdf_blake2b_32_3DH(dh1, dh2, dh3, ss, out->shared_secret);
     }
 
-    // TODO: add support for one-time prekeys
     memcpy(out->msg.peer_ident_pk, self->ident_pk, crypto_sign_PUBLICKEYBYTES);
     memcpy(out->msg.eph_pk, eph_pk, crypto_box_PUBLICKEYBYTES);
     memset(out->msg.one_time_prekey, 0, sizeof out->msg.one_time_prekey);
@@ -215,6 +229,15 @@ int init_key_exchange(const pqxdh_state* self,
     sodium_memzero(eph_sk, sizeof eph_sk);
     OQS_KEM_free(kem);
     return 0;
+}
+
+void make_bundle_from_state(const pqxdh_state* s, pqxdh_key_bundle* b)
+{
+    memcpy(b->ident_pk, s->ident_pk, sizeof b->ident_pk);
+    memcpy(b->prekey_pk, s->prekey_pk, sizeof b->prekey_pk);
+    memcpy(b->prekey_sig, s->prekey_sig, sizeof b->prekey_sig);
+    memcpy(b->mlkem_pk, s->mlkem_pk, sizeof b->mlkem_pk);
+    memcpy(b->mlkem_pk_sig, s->mlkem_pk_sig, sizeof b->mlkem_pk_sig);
 }
 
 int complete_key_exchange(pqxdh_state* self,

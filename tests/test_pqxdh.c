@@ -5,15 +5,6 @@
 #include <sodium.h>
 #include <string.h>
 
-static void make_bundle_from_state(const pqxdh_state* s, pqxdh_key_bundle* b)
-{
-    memcpy(b->ident_pk, s->ident_pk, sizeof b->ident_pk);
-    memcpy(b->prekey_pk, s->prekey_pk, sizeof b->prekey_pk);
-    memcpy(b->prekey_sig, s->prekey_sig, sizeof b->prekey_sig);
-    memcpy(b->mlkem_pk, s->mlkem_pk, sizeof b->mlkem_pk);
-    memcpy(b->mlkem_pk_sig, s->mlkem_pk_sig, sizeof b->mlkem_pk_sig);
-}
-
 static int bytes_all_zero(const uint8_t* p, size_t n)
 {
     uint8_t acc = 0;
